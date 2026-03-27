@@ -1,0 +1,29 @@
+name: Deploy SAV Backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            cd /root/sav-chien-heureux
+            git pull origin main
+            cd backend
+            npm install --production
+            pm2 restart sav-backend || pm2 start index.js --name sav-backend
+            pm2 save
