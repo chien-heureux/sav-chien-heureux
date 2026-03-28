@@ -7,15 +7,17 @@ const nodemailer = require('nodemailer');
 const imapConfig = {
   user: process.env.MAIL_USER,
   password: process.env.MAIL_PASSWORD,
-  host: process.env.MAIL_HOST,
-  port: parseInt(process.env.MAIL_PORT_IMAP),
+  host: process.env.MAIL_HOST || 'ssl0.ovh.net',
+  port: parseInt(process.env.MAIL_PORT_IMAP) || 993,
   tls: true,
-  tlsOptions: { rejectUnauthorized: false }
+  tlsOptions: { rejectUnauthorized: false },
+  connTimeout: 10000,
+  authTimeout: 10000
 };
 
 const smtpTransporter = nodemailer.createTransport({
-  host: process.env.MAIL_HOST,
-  port: parseInt(process.env.MAIL_PORT_SMTP),
+  host: process.env.MAIL_HOST || 'ssl0.ovh.net',
+  port: parseInt(process.env.MAIL_PORT_SMTP) || 465,
   secure: true,
   auth: {
     user: process.env.MAIL_USER,
@@ -23,25 +25,39 @@ const smtpTransporter = nodemailer.createTransport({
   }
 });
 
-// GET /api/mail/inbox — lire la boîte de réception
 router.get('/inbox', (req, res) => {
   const limit = parseInt(req.query.limit) || 20;
   const imap = new Imap(imapConfig);
   const emails = [];
+  let responded = false;
+
+  const timeout = setTimeout(() => {
+    if (!responded) {
+      responded = true;
+      try { imap.end(); } catch(e) {}
+      res.status(504).json({ error: 'Timeout connexion IMAP' });
+    }
+  }, 15000);
 
   imap.once('ready', () => {
     imap.openBox('INBOX', false, (err, box) => {
-      if (err) { imap.end(); return res.status(500).json({ error: 'Erreur ouverture INBOX' }); }
+      if (err) {
+        clearTimeout(timeout);
+        responded = true;
+        imap.end();
+        return res.status(500).json({ error: 'Erreur ouverture INBOX: ' + err.message });
+      }
 
       const total = box.messages.total;
-      if (total === 0) { imap.end(); return res.json([]); }
+      if (total === 0) {
+        clearTimeout(timeout);
+        responded = true;
+        imap.end();
+        return res.json([]);
+      }
 
       const start = Math.max(1, total - limit + 1);
-      const fetch = imap.seq.fetch(`${start}:${total}`, {
-        bodies: '',
-        struct: true,
-        envelope: true
-      });
+      const fetch = imap.seq.fetch(`${start}:${total}`, { bodies: '', struct: true });
 
       fetch.on('message', (msg) => {
         let uid;
@@ -54,9 +70,7 @@ router.get('/inbox', (req, res) => {
                 from: parsed.from?.text || '',
                 subject: parsed.subject || '(sans objet)',
                 date: parsed.date,
-                text: parsed.text?.substring(0, 500) || '',
-                html: parsed.html || '',
-                read: false,
+                preview: (parsed.text || '').substring(0, 200),
                 source: 'email'
               });
             }
@@ -64,44 +78,40 @@ router.get('/inbox', (req, res) => {
         });
       });
 
-      fetch.once('end', () => {
-        imap.end();
-      });
+      fetch.once('end', () => { imap.end(); });
     });
   });
 
   imap.once('end', () => {
-    res.json(emails.reverse());
+    if (!responded) {
+      clearTimeout(timeout);
+      responded = true;
+      res.json(emails.reverse());
+    }
   });
 
   imap.once('error', (err) => {
-    console.error('IMAP error:', err);
-    res.status(500).json({ error: 'Erreur connexion mail' });
+    if (!responded) {
+      clearTimeout(timeout);
+      responded = true;
+      res.status(500).json({ error: 'Erreur IMAP: ' + err.message });
+    }
   });
 
   imap.connect();
 });
 
-// POST /api/mail/send — envoyer un email
 router.post('/send', async (req, res) => {
   try {
-    const { to, subject, text, replyTo } = req.body;
-    if (!to || !subject || !text) {
-      return res.status(400).json({ error: 'to, subject et text sont requis' });
-    }
-
+    const { to, subject, text } = req.body;
+    if (!to || !subject || !text) return res.status(400).json({ error: 'to, subject et text requis' });
     await smtpTransporter.sendMail({
       from: `Chien Heureux SAV <${process.env.MAIL_USER}>`,
-      to,
-      subject,
-      text,
-      inReplyTo: replyTo || undefined
+      to, subject, text
     });
-
-    res.json({ success: true, message: 'Email envoyé' });
+    res.json({ success: true });
   } catch (err) {
-    console.error('SMTP send error:', err);
-    res.status(500).json({ error: 'Erreur envoi email' });
+    res.status(500).json({ error: 'Erreur envoi: ' + err.message });
   }
 });
 
