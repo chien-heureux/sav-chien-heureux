@@ -31,12 +31,19 @@ router.get('/inbox', async (req, res) => {
   try {
     await client.connect();
     const emails = [];
-    await client.mailboxOpen('INBOX');
-    for await (let message of client.fetch({ last: limit }, { envelope: true, bodyStructure: true, source: true })) {
+    const mailbox = await client.mailboxOpen('INBOX');
+    const total = mailbox.exists;
+    if (total === 0) {
+      await client.logout();
+      return res.json([]);
+    }
+    const start = Math.max(1, total - limit + 1);
+    for await (let message of client.fetch(`${start}:${total}`, { source: true })) {
       try {
         const parsed = await simpleParser(message.source);
         emails.push({
           uid: message.uid,
+          seq: message.seq,
           from: parsed.from?.text || '',
           subject: parsed.subject || '(sans objet)',
           date: parsed.date,
