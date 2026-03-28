@@ -7,20 +7,20 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0f0f0f;
-    --bg2: #161616;
-    --bg3: #1e1e1e;
-    --border: #2a2a2a;
-    --border2: #333;
-    --text: #e8e8e8;
-    --text2: #888;
-    --text3: #555;
-    --accent: #e8d5a3;
-    --accent2: #c4a96b;
-    --green: #4caf7d;
-    --red: #e05656;
-    --orange: #e0936b;
-    --blue: #6b9fe0;
+    --bg: #f9f6f0;
+    --bg2: #ffffff;
+    --bg3: #f0e9de;
+    --border: #e8e0d4;
+    --border2: #d0c4b4;
+    --text: #1c2b58;
+    --text2: #494949;
+    --text3: #9a9080;
+    --accent: #ff8039;
+    --accent2: #ef5600;
+    --green: #2d7a3a;
+    --red: #c93a2a;
+    --orange: #ff8039;
+    --blue: #1c2b58;
     --radius: 8px;
     --api: https://sav-chien-heureux-production.up.railway.app;
   }
@@ -130,7 +130,7 @@
   .status-dot {
     width: 6px; height: 6px;
     border-radius: 50%;
-    background: var(--green);
+    background: #2d7a3a;
     animation: pulse 2s infinite;
   }
 
@@ -222,7 +222,7 @@
     transition: background 0.1s;
     cursor: pointer;
   }
-  tbody tr:hover { background: var(--bg2); }
+  tbody tr:hover { background: #fdf7f2; }
 
   tbody td {
     padding: 11px 16px;
@@ -245,10 +245,10 @@
     font-weight: 500;
   }
 
-  .s-fulfilled { background: rgba(76,175,125,0.15); color: var(--green); }
-  .s-unfulfilled { background: rgba(224,147,107,0.15); color: var(--orange); }
-  .s-paid { background: rgba(76,175,125,0.1); color: var(--green); }
-  .s-alert { background: rgba(224,86,86,0.15); color: var(--red); }
+  .s-fulfilled { background: #e6f4ea; color: #2d7a3a; }
+  .s-unfulfilled { background: #fff0e6; color: #ef5600; }
+  .s-paid { background: #e6f4ea; color: #2d7a3a; }
+  .s-alert { background: #fde8e6; color: #c93a2a; }
 
   .ticket-btn-sm {
     padding: 3px 8px;
@@ -288,7 +288,7 @@
     cursor: pointer;
     transition: all 0.15s;
   }
-  .new-ticket-btn:hover { background: rgba(232,213,163,0.08); }
+  .new-ticket-btn:hover { background: rgba(255,128,57,0.06); }
 
   .tickets-table-wrap { flex: 1; overflow-y: auto; }
   .tickets-table-wrap::-webkit-scrollbar { width: 4px; }
@@ -453,7 +453,7 @@
     transition: background 0.1s;
   }
   .send-btn:hover { background: var(--accent2); }
-  .send-btn svg { width: 12px; height: 12px; stroke: #0f0f0f; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .send-btn svg { width: 12px; height: 12px; stroke: #ffffff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
   .msg-sidebar {
     width: 200px;
@@ -645,7 +645,7 @@
         <span class="pill">IG</span>
         <span class="pill">FB</span>
       </div>
-      <div id="msg-list-items" style="display:none">
+      <div id="msg-list-items">
         <div class="msg-item active">
           <div class="msg-head"><span class="msg-sender"><span class="src-dot src-ig"></span>Marie L.</span><span class="msg-time">10:42</span></div>
           <div class="msg-preview">Mon chien n'a pas reçu sa commande...</div>
@@ -981,38 +981,86 @@
     }
   }
 
-  // MAIL
+  // ===== MAIL =====
   let allMails = [];
+  let selectedMail = null;
+
   async function loadMails() {
     try {
       const res = await fetch(`${API}/api/mail/inbox?limit=20`);
       allMails = await res.json();
       renderMailList(allMails);
-    } catch(e) { console.error(e); }
+    } catch(e) {
+      console.error('Erreur mail:', e);
+    }
   }
+
   function renderMailList(mails) {
     const container = document.getElementById('msg-list-items');
-    container.style.display = 'block';
-    if (!mails.length) { container.innerHTML = '<div style="padding:16px;font-size:11px;color:var(--text3);text-align:center">Aucun mail</div>'; return; }
-    container.innerHTML = mails.map((m,i) => {
+    if (!mails.length) {
+      container.innerHTML = '<div style="padding:16px;font-size:11px;color:var(--text3);text-align:center;">Aucun mail</div>';
+      return;
+    }
+    container.innerHTML = mails.map((m, i) => {
       const from = m.from.replace(/"([^"]+)".*/, '$1').trim() || m.from;
-      const date = m.date ? new Date(m.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '';
-      return `<div class="msg-item ${i===0?'active':''}" onclick="selectMail(${i})"><div class="msg-head"><span class="msg-sender"><span class="src-dot src-email"></span>${from.substring(0,22)}</span><span class="msg-time">${date}</span></div><div class="msg-preview">${(m.subject||'').substring(0,38)}</div></div>`;
+      const date = m.date ? new Date(m.date).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}) : '';
+      return `<div class="msg-item ${i===0?'active':''}" onclick="selectMail(${i})">
+        <div class="msg-head">
+          <span class="msg-sender"><span class="src-dot src-email"></span>${from.substring(0,20)}</span>
+          <span class="msg-time">${date}</span>
+        </div>
+        <div class="msg-preview">${(m.subject||'').substring(0,40)}</div>
+      </div>`;
     }).join('');
-    selectMail(0);
+    if (mails.length > 0) selectMail(0);
   }
+
   function selectMail(i) {
-    const m = allMails[i];
-    document.querySelectorAll('.msg-item').forEach((el,idx) => el.classList.toggle('active',idx===i));
-    const from = m.from.replace(/"([^"]+)".*/, '$1').trim() || m.from;
-    const email = m.from.match(/<([^>]+)>/)?.[1] || m.from;
-    document.querySelector('.avatar').textContent = from.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-    document.querySelector('.msg-detail-name').innerHTML = from + ' <span style="font-size:10px;color:var(--text3);font-weight:400;">· Email</span>';
-    document.querySelector('.msg-detail-sub').textContent = m.subject || '(sans objet)';
-    document.querySelector('.msg-thread').innerHTML = '<div><div class="bubble in">' + (m.preview||'').replace(/\n/g,'<br>').substring(0,600) + '</div><div class="bubble-time">' + (m.date ? new Date(m.date).toLocaleString('fr-FR') : '') + '</div></div>';
-    document.querySelector('.compose-input').placeholder = 'Répondre à ' + from + '...';
-    document.querySelector('.msg-detail-actions').innerHTML = '<button class="btn-sm">Résolu</button><button class="btn-sm accent" onclick="openTicketModal(\'' + from.replace(/'/g,'') + '\',\'' + email + '\',\'email\',\'\',\'' + (m.subject||'').replace(/'/g,'').substring(0,50) + '\')">+ Ticket</button>';
+    selectedMail = allMails[i];
+    document.querySelectorAll('.msg-item').forEach((el,idx) => el.classList.toggle('active', idx===i));
+    const from = selectedMail.from.replace(/"([^"]+)".*/, '$1').trim() || selectedMail.from;
+    const initials = from.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const email = selectedMail.from.match(/<([^>]+)>/)?.[1] || selectedMail.from;
+    document.querySelector('.avatar').textContent = initials;
+    document.querySelector('.msg-detail-name').innerHTML = `${from} <span style="font-size:10px;color:var(--text3);font-weight:400;">· Email</span>`;
+    document.querySelector('.msg-detail-sub').textContent = selectedMail.subject || '(sans objet)';
+    document.querySelector('.msg-thread').innerHTML = `
+      <div>
+        <div class="bubble in">${(selectedMail.preview||'').replace(/\n/g,'<br>').substring(0,500)}</div>
+        <div class="bubble-time">${selectedMail.date ? new Date(selectedMail.date).toLocaleString('fr-FR') : ''}</div>
+      </div>`;
+    document.querySelector('.compose-input').placeholder = `Répondre à ${from}...`;
+    document.querySelector('.msg-detail-actions').innerHTML = `
+      <button class="btn-sm">Résolu</button>
+      <button class="btn-sm accent" onclick="openTicketModal('${from}','${email}','email','','${(selectedMail.subject||'').replace(/'/g,'')}')">+ Ticket</button>`;
+    const miniOrders = document.getElementById('msg-orders-mini');
+    miniOrders.innerHTML = '<div style="font-size:10px;color:var(--text3);">Recherche en cours...</div>';
+    if (email) {
+      fetch(`${API}/api/shopify/customers/search?email=${encodeURIComponent(email)}`)
+        .then(r=>r.json()).then(customers => {
+          if (customers.length > 0) {
+            const c = customers[0];
+            document.querySelector('.msg-sidebar div:nth-child(2)').textContent = `${c.first_name} ${c.last_name}`;
+            document.querySelector('.msg-sidebar div:nth-child(3)').textContent = email;
+            fetch(`${API}/api/shopify/customers/${c.id}/orders`)
+              .then(r=>r.json()).then(orders => {
+                if (!orders.length) { miniOrders.innerHTML = '<div class="order-mini"><div class="order-mini-id">Aucune commande</div></div>'; return; }
+                miniOrders.innerHTML = orders.slice(0,3).map(o => `
+                  <div class="order-mini">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span class="order-mini-id">${o.name}</span>
+                      <span class="status-badge ${o.fulfillment_status==='fulfilled'?'s-fulfilled':'s-unfulfilled'}" style="font-size:9px;">${o.fulfillment_status||'en attente'}</span>
+                    </div>
+                    <div class="order-mini-det">${parseFloat(o.total_price).toFixed(2)} €</div>
+                  </div>`).join('');
+              });
+          } else {
+            miniOrders.innerHTML = '<div class="order-mini"><div class="order-mini-id">Aucune commande</div></div>';
+          }
+        }).catch(() => { miniOrders.innerHTML = ''; });
+    }
   }
+
   // Init
   loadOrders();
   loadMails();
