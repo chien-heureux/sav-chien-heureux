@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAV — Chien Heureux</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #161616;
+    --bg3: #1e1e1e;
+    --border: #2a2a2a;
+    --border2: #333;
+    --text: #e8e8e8;
+    --text2: #888;
+    --text3: #555;
+    --accent: #e8d5a3;
+    --accent2: #c4a96b;
+    --green: #4caf7d;
+    --red: #e05656;
+    --orange: #e0936b;
+    --blue: #6b9fe0;
+    --radius: 8px;
+    --api: https://sav-chien-heureux-production.up.railway.app;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 52px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    font-size: 16px;
+  }
+
+  .nav-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: background 0.15s;
+    color: var(--text3);
+  }
+  .nav-btn:hover { background: var(--bg3); color: var(--text2); }
+  .nav-btn.active { background: var(--bg3); color: var(--accent); }
+  .nav-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  .badge {
+    position: absolute;
+    top: 3px; right: 3px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--red);
+    font-size: 8px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+
+  .nav-spacer { flex: 1; }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .topbar {
+    height: 44px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .topbar-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.02em;
+  }
+
+  .topbar-status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--green);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .topbar-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+  .token-warning {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    color: var(--orange);
+    padding: 3px 8px;
+    border: 1px solid var(--orange);
+    border-radius: 4px;
+    opacity: 0.8;
+  }
+
+  /* TABS */
+  .tab-content { display: none; flex: 1; overflow: hidden; }
+  .tab-content.active { display: flex; flex: 1; overflow: hidden; }
+
+  /* ===== COMMANDES ===== */
+  .orders-layout { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .orders-toolbar {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: var(--bg2);
+    flex-shrink: 0;
+  }
+
+  .pill {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    transition: all 0.1s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .pill:hover { border-color: var(--text3); color: var(--text); }
+  .pill.active { background: var(--bg3); color: var(--accent); border-color: var(--accent2); }
+
+  .orders-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .orders-table-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  .orders-table-wrap::-webkit-scrollbar { width: 4px; }
+  .orders-table-wrap::-webkit-scrollbar-track { background: transparent; }
+  .orders-table-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+
+  thead th {
+    text-align: left;
+    padding: 8px 16px;
+    color: var(--text3);
+    font-weight: 500;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+    cursor: pointer;
+  }
+  tbody tr:hover { background: var(--bg2); }
+
+  tbody td {
+    padding: 11px 16px;
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  .order-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+  }
+
+  .s-fulfilled { background: rgba(76,175,125,0.15); color: var(--green); }
+  .s-unfulfilled { background: rgba(224,147,107,0.15); color: var(--orange); }
+  .s-paid { background: rgba(76,175,125,0.1); color: var(--green); }
+  .s-alert { background: rgba(224,86,86,0.15); color: var(--red); }
+
+  .ticket-btn-sm {
+    padding: 3px 8px;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .ticket-btn-sm:hover { border-color: var(--accent2); color: var(--accent); }
+
+  /* ===== TICKETS ===== */
+  .tickets-layout { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .tickets-toolbar {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: var(--bg2);
+    flex-shrink: 0;
+  }
+
+  .new-ticket-btn {
+    margin-left: auto;
+    padding: 5px 12px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    border-radius: var(--radius);
+    border: 1px solid var(--accent2);
+    background: transparent;
+    color: var(--accent);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .new-ticket-btn:hover { background: rgba(232,213,163,0.08); }
+
+  .tickets-table-wrap { flex: 1; overflow-y: auto; }
+  .tickets-table-wrap::-webkit-scrollbar { width: 4px; }
+  .tickets-table-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .prio-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+  .prio-urgent { background: var(--red); }
+  .prio-normal { background: var(--orange); }
+  .prio-low { background: var(--green); }
+
+  /* ===== MESSAGERIE ===== */
+  .msg-layout { display: flex; width: 100%; overflow: hidden; }
+
+  .msg-list {
+    width: 260px;
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    flex-shrink: 0;
+    background: var(--bg2);
+  }
+  .msg-list::-webkit-scrollbar { width: 3px; }
+  .msg-list::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .msg-filters {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .msg-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .msg-item:hover { background: var(--bg3); }
+  .msg-item.active { background: var(--bg3); border-left: 2px solid var(--accent); }
+
+  .msg-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+  .msg-sender { font-size: 12px; font-weight: 500; color: var(--text); }
+  .msg-time { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .msg-preview { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .src-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  .src-email { background: var(--blue); }
+  .src-ig { background: #d4537e; }
+  .src-fb { background: #6b8ee0; }
+  .src-tiktok { background: var(--text2); }
+  .src-shopify { background: var(--green); }
+
+  .msg-detail { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .msg-detail-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg2);
+    flex-shrink: 0;
+  }
+
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent);
+    flex-shrink: 0;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .msg-detail-name { font-size: 13px; font-weight: 500; }
+  .msg-detail-sub { font-size: 11px; color: var(--text3); }
+
+  .msg-detail-actions { margin-left: auto; display: flex; gap: 6px; }
+
+  .btn-sm {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .btn-sm:hover { border-color: var(--text3); color: var(--text); }
+  .btn-sm.accent { border-color: var(--accent2); color: var(--accent); }
+
+  .msg-thread {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .msg-thread::-webkit-scrollbar { width: 3px; }
+  .msg-thread::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .bubble {
+    max-width: 68%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .bubble.in { background: var(--bg3); align-self: flex-start; border-bottom-left-radius: 3px; }
+  .bubble.out { background: rgba(232,213,163,0.12); border: 1px solid rgba(232,213,163,0.2); align-self: flex-end; border-bottom-right-radius: 3px; }
+
+  .bubble-time { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; margin-top: 2px; }
+  .bubble-time.right { text-align: right; }
+
+  .msg-compose {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: var(--bg2);
+    flex-shrink: 0;
+  }
+
+  .compose-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.15s;
+  }
+  .compose-input:focus { border-color: var(--accent2); }
+
+  .send-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s;
+  }
+  .send-btn:hover { background: var(--accent2); }
+  .send-btn svg { width: 12px; height: 12px; stroke: #0f0f0f; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .msg-sidebar {
+    width: 200px;
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 12px;
+    background: var(--bg2);
+    flex-shrink: 0;
+  }
+
+  .sidebar-label {
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+
+  .order-mini {
+    background: var(--bg3);
+    border-radius: var(--radius);
+    padding: 7px 9px;
+    margin-bottom: 6px;
+    border: 1px solid var(--border);
+  }
+  .order-mini-id { font-size: 11px; font-weight: 500; color: var(--accent); font-family: 'DM Mono', monospace; }
+  .order-mini-det { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+  /* LOADING */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 8px;
+    color: var(--text3);
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .spinner {
+    width: 14px; height: 14px;
+    border: 1.5px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* MODAL TICKET */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 20px;
+    width: 440px;
+    max-width: 90vw;
+  }
+
+  .modal h3 {
+    font-size: 14px;
+    font-family: 'DM Mono', monospace;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .form-row { margin-bottom: 12px; }
+  .form-label { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; display: block; }
+
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--text);
+    outline: none;
+    font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent2); }
+  .form-select option { background: var(--bg3); }
+  .form-textarea { resize: vertical; min-height: 70px; }
+
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+  .btn-cancel {
+    padding: 6px 14px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+  }
+
+  .btn-submit {
+    padding: 6px 14px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    border-radius: var(--radius);
+    border: 1px solid var(--accent2);
+    background: rgba(232,213,163,0.1);
+    color: var(--accent);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-submit:hover { background: rgba(232,213,163,0.18); }
+
+  /* TIKTOK IFRAME */
+  .tiktok-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .tiktok-bar {
+    padding: 8px 16px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .tiktok-bar span { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .tiktok-iframe { flex: 1; border: none; background: var(--bg); }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo">🐕</div>
+  <button class="nav-btn active" onclick="switchTab('msg')" id="nav-msg" title="Messagerie">
+    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  </button>
+  <button class="nav-btn" onclick="switchTab('orders')" id="nav-orders" title="Commandes">
+    <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 5v3h-7V8zM5.5 21a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM20.5 21a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/></svg>
+  </button>
+  <button class="nav-btn" onclick="switchTab('tickets')" id="nav-tickets" title="Tickets">
+    <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+  </button>
+  <button class="nav-btn" onclick="switchTab('tiktok')" id="nav-tiktok" title="TikTok Seller">
+    <svg viewBox="0 0 24 24"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+  </button>
+  <div class="nav-spacer"></div>
+  <button class="nav-btn" title="Paramètres">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <span class="topbar-title" id="topbar-title">messagerie</span>
+    <div class="topbar-status">
+      <div class="status-dot"></div>
+      railway · live
+    </div>
+    <div class="topbar-right">
+      <span class="token-warning" id="token-warning">⚠ token expire dans 24h</span>
+    </div>
+  </div>
+
+  <!-- MESSAGERIE -->
+  <div class="tab-content active msg-layout" id="tab-msg">
+    <div class="msg-list">
+      <div class="msg-filters">
+        <span class="pill active">Tous</span>
+        <span class="pill">Email</span>
+        <span class="pill">IG</span>
+        <span class="pill">FB</span>
+      </div>
+      <div id="msg-list-items">
+        <div class="msg-item active">
+          <div class="msg-head"><span class="msg-sender"><span class="src-dot src-ig"></span>Marie L.</span><span class="msg-time">10:42</span></div>
+          <div class="msg-preview">Mon chien n'a pas reçu sa commande...</div>
+        </div>
+        <div class="msg-item">
+          <div class="msg-head"><span class="msg-sender"><span class="src-dot src-email"></span>thomas.d@gmail.com</span><span class="msg-time">09:15</span></div>
+          <div class="msg-preview">Remboursement — commande #4821</div>
+        </div>
+        <div class="msg-item">
+          <div class="msg-head"><span class="msg-sender"><span class="src-dot src-fb"></span>Julien M.</span><span class="msg-time">Hier</span></div>
+          <div class="msg-preview">Composition exacte des bois de cerf ?</div>
+        </div>
+        <div class="msg-item">
+          <div class="msg-head"><span class="msg-sender"><span class="src-dot src-ig"></span>@bulldogmama</span><span class="msg-time">Lun</span></div>
+          <div class="msg-preview">Le colis est arrivé abîmé 😢</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="msg-detail">
+      <div class="msg-detail-header">
+        <div class="avatar">ML</div>
+        <div>
+          <div class="msg-detail-name">Marie Laurent <span style="font-size:10px;color:var(--text3);font-weight:400;">· Instagram</span></div>
+          <div class="msg-detail-sub">Commande liée : <span style="color:var(--accent);cursor:pointer;" onclick="switchTab('orders')">#5103</span></div>
+        </div>
+        <div class="msg-detail-actions">
+          <button class="btn-sm">Résolu</button>
+          <button class="btn-sm accent" onclick="openTicketModal('Marie Laurent','marie.l@gmail.com','instagram','','Colis non reçu #5103')">+ Ticket</button>
+        </div>
+      </div>
+      <div class="msg-thread">
+        <div>
+          <div class="bubble in">Bonjour, j'ai commandé il y a 10 jours et je n'ai toujours rien reçu 😢 commande #5103</div>
+          <div class="bubble-time">Hier, 18h04</div>
+        </div>
+        <div>
+          <div class="bubble out">Bonjour Marie ! Je suis vraiment désolé pour ce délai. Je regarde ça tout de suite.</div>
+          <div class="bubble-time right">Hier, 18h22</div>
+        </div>
+        <div>
+          <div class="bubble in">Merci ! Vous avez un numéro de suivi ?</div>
+          <div class="bubble-time">Aujourd'hui, 10h42</div>
+        </div>
+      </div>
+      <div class="msg-compose">
+        <input class="compose-input" placeholder="Répondre à Marie..." />
+        <button class="send-btn">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="msg-sidebar">
+      <div class="sidebar-label">Client</div>
+      <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;">Marie Laurent</div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px;">marie.l@gmail.com</div>
+      <div class="sidebar-label">Commandes Shopify</div>
+      <div id="msg-orders-mini">
+        <div class="order-mini">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="order-mini-id">#5103</span>
+            <span class="status-badge s-unfulfilled" style="font-size:9px;">retard</span>
+          </div>
+          <div class="order-mini-det">Pack XXL — 42,00 €</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMANDES -->
+  <div class="tab-content orders-layout" id="tab-orders">
+    <div class="orders-toolbar">
+      <span class="pill active" onclick="filterOrders('any', this)">Toutes</span>
+      <span class="pill" onclick="filterOrders('unfulfilled', this)">Non expédiées</span>
+      <span class="pill" onclick="filterOrders('fulfilled', this)">Expédiées</span>
+      <span class="pill" onclick="filterOrders('partial', this)">Partielles</span>
+      <span class="orders-count" id="orders-count">— commandes</span>
+    </div>
+    <div class="orders-table-wrap" id="orders-table-wrap">
+      <div class="loading"><div class="spinner"></div> chargement des commandes...</div>
+    </div>
+  </div>
+
+  <!-- TICKETS -->
+  <div class="tab-content tickets-layout" id="tab-tickets">
+    <div class="tickets-toolbar">
+      <span class="pill active" onclick="filterTickets('all', this)">Tous</span>
+      <span class="pill" onclick="filterTickets('ouvert', this)">Ouverts</span>
+      <span class="pill" onclick="filterTickets('en cours', this)">En cours</span>
+      <span class="pill" onclick="filterTickets('résolu', this)">Résolus</span>
+      <button class="new-ticket-btn" onclick="openTicketModal()">+ nouveau ticket</button>
+    </div>
+    <div class="tickets-table-wrap" id="tickets-table-wrap">
+      <div class="loading"><div class="spinner"></div> chargement des tickets...</div>
+    </div>
+  </div>
+
+  <!-- TIKTOK -->
+  <div class="tab-content" id="tab-tiktok" style="flex-direction:column;">
+    <div class="tiktok-panel">
+      <div class="tiktok-bar">
+        <svg width="14" height="14" viewBox="0 0 24 24" style="stroke:var(--text3);fill:none;stroke-width:1.5;stroke-linecap:round;"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+        <span>TikTok Seller Center — chat client</span>
+        <a href="https://seller.tiktok.com" target="_blank" style="margin-left:auto;font-size:10px;color:var(--accent);font-family:'DM Mono',monospace;text-decoration:none;">ouvrir dans un nouvel onglet ↗</a>
+      </div>
+      <iframe class="tiktok-iframe" src="https://seller.tiktok.com" title="TikTok Seller Center"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TICKET -->
+<div class="modal-overlay" id="ticket-modal">
+  <div class="modal">
+    <h3>// nouveau ticket</h3>
+    <div class="form-row">
+      <label class="form-label">Nom client</label>
+      <input class="form-input" id="t-name" placeholder="Marie Laurent" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="t-email" placeholder="email@exemple.fr" />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="form-row">
+        <label class="form-label">Catégorie</label>
+        <select class="form-select" id="t-category">
+          <option value="retard livraison">Retard livraison</option>
+          <option value="produit défectueux">Produit défectueux</option>
+          <option value="remboursement">Remboursement</option>
+          <option value="colis abîmé">Colis abîmé</option>
+          <option value="question produit">Question produit</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Priorité</label>
+        <select class="form-select" id="t-priority">
+          <option value="urgent">🔴 Urgent</option>
+          <option value="normal" selected>🟡 Normal</option>
+          <option value="faible">🟢 Faible</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Sujet</label>
+      <input class="form-input" id="t-subject" placeholder="Résumé du problème" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Description</label>
+      <textarea class="form-textarea" id="t-description" placeholder="Détails..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeTicketModal()">annuler</button>
+      <button class="btn-submit" onclick="createTicket()">créer le ticket →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'https://sav-chien-heureux-production.up.railway.app';
+  let allOrders = [];
+  let allTickets = [];
+
+  // Navigation
+  function switchTab(tab) {
+    ['msg','orders','tickets','tiktok'].forEach(t => {
+      document.getElementById('tab-'+t).classList.remove('active');
+      document.getElementById('nav-'+t).classList.remove('active');
+    });
+    document.getElementById('tab-'+tab).classList.add('active');
+    document.getElementById('nav-'+tab).classList.add('active');
+    const titles = { msg: 'messagerie', orders: 'suivi commandes', tickets: 'tickets sav', tiktok: 'tiktok seller' };
+    document.getElementById('topbar-title').textContent = titles[tab];
+    if (tab === 'orders' && allOrders.length === 0) loadOrders();
+    if (tab === 'tickets') loadTickets();
+  }
+
+  // ===== COMMANDES =====
+  async function loadOrders(status = 'any') {
+    const wrap = document.getElementById('orders-table-wrap');
+    wrap.innerHTML = '<div class="loading"><div class="spinner"></div> chargement...</div>';
+    try {
+      const res = await fetch(`${API}/api/shopify/orders?status=${status}&limit=50`);
+      allOrders = await res.json();
+      document.getElementById('orders-count').textContent = `${allOrders.length} commandes`;
+      renderOrders(allOrders);
+    } catch(e) {
+      wrap.innerHTML = '<div class="loading" style="color:var(--red)">erreur de chargement</div>';
+    }
+  }
+
+  function renderOrders(orders) {
+    const wrap = document.getElementById('orders-table-wrap');
+    if (!orders.length) {
+      wrap.innerHTML = '<div class="loading">aucune commande</div>';
+      return;
+    }
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Commande</th>
+            <th>Client</th>
+            <th>Date</th>
+            <th>Produits</th>
+            <th>Montant</th>
+            <th>Statut</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${orders.map(o => {
+            const date = new Date(o.created_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'short'});
+            const products = o.line_items.map(i => i.title).join(', ').substring(0,40) + (o.line_items.length > 1 ? '...' : '');
+            const statusClass = o.fulfillment_status === 'fulfilled' ? 's-fulfilled' : o.fulfillment_status === 'partial' ? 's-unfulfilled' : 's-unfulfilled';
+            const statusLabel = o.fulfillment_status || 'non expédié';
+            const clientName = o.shipping_address ? `${o.shipping_address.first_name} ${o.shipping_address.last_name}` : o.email;
+            return `<tr>
+              <td><span class="order-num">${o.name}</span></td>
+              <td style="font-size:11px;">${clientName}</td>
+              <td style="color:var(--text3);font-size:11px;font-family:'DM Mono',monospace;">${date}</td>
+              <td style="color:var(--text2);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${products}</td>
+              <td style="font-family:'DM Mono',monospace;font-size:11px;">${parseFloat(o.total_price).toFixed(2)} €</td>
+              <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+              <td><button class="ticket-btn-sm" onclick="openTicketModal('${clientName}','${o.email}','shopify','${o.name}','Problème commande ${o.name}')">ticket</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function filterOrders(status, el) {
+    document.querySelectorAll('.orders-toolbar .pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    loadOrders(status);
+  }
+
+  // ===== TICKETS =====
+  async function loadTickets() {
+    const wrap = document.getElementById('tickets-table-wrap');
+    wrap.innerHTML = '<div class="loading"><div class="spinner"></div> chargement...</div>';
+    try {
+      const res = await fetch(`${API}/api/tickets`);
+      allTickets = await res.json();
+      renderTickets(allTickets);
+    } catch(e) {
+      wrap.innerHTML = '<div class="loading" style="color:var(--red)">erreur de chargement</div>';
+    }
+  }
+
+  function renderTickets(tickets) {
+    const wrap = document.getElementById('tickets-table-wrap');
+    if (!tickets.length) {
+      wrap.innerHTML = '<div class="loading" style="flex-direction:column;gap:8px;"><span>aucun ticket</span><button class="new-ticket-btn" onclick="openTicketModal()" style="margin:0;">+ créer le premier</button></div>';
+      return;
+    }
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Client</th>
+            <th>Catégorie</th>
+            <th>Sujet</th>
+            <th>Priorité</th>
+            <th>Statut</th>
+            <th>Assigné</th>
+            <th>Ouvert le</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tickets.map(t => {
+            const prioClass = t.priority === 'urgent' ? 'prio-urgent' : t.priority === 'normal' ? 'prio-normal' : 'prio-low';
+            const statusClass = t.status === 'ouvert' ? 's-alert' : t.status === 'résolu' ? 's-fulfilled' : 's-unfulfilled';
+            const date = new Date(t.created_at).toLocaleDateString('fr-FR', {day:'2-digit',month:'short'});
+            return `<tr>
+              <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);">#${t.reference}</span></td>
+              <td style="font-size:11px;">${t.client_name}</td>
+              <td><span style="font-size:10px;padding:2px 6px;background:var(--bg3);border-radius:4px;color:var(--text2);">${t.category}</span></td>
+              <td style="font-size:11px;color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.subject}</td>
+              <td><span class="prio-dot ${prioClass}"></span><span style="font-size:11px;">${t.priority}</span></td>
+              <td><span class="status-badge ${statusClass}">${t.status}</span></td>
+              <td style="font-size:11px;color:var(--text2);">${t.assigned_to}</td>
+              <td style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;">${date}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function filterTickets(status, el) {
+    document.querySelectorAll('.tickets-toolbar .pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    if (status === 'all') return renderTickets(allTickets);
+    renderTickets(allTickets.filter(t => t.status === status));
+  }
+
+  // ===== MODAL TICKET =====
+  function openTicketModal(name='', email='', source='manuel', orderId='', subject='') {
+    document.getElementById('t-name').value = name;
+    document.getElementById('t-email').value = email;
+    document.getElementById('t-subject').value = subject;
+    document.getElementById('ticket-modal').classList.add('open');
+  }
+
+  function closeTicketModal() {
+    document.getElementById('ticket-modal').classList.remove('open');
+  }
+
+  async function createTicket() {
+    const body = {
+      client_name: document.getElementById('t-name').value,
+      client_email: document.getElementById('t-email').value,
+      category: document.getElementById('t-category').value,
+      priority: document.getElementById('t-priority').value,
+      subject: document.getElementById('t-subject').value,
+      description: document.getElementById('t-description').value,
+      source: 'manuel'
+    };
+    if (!body.client_name || !body.subject) return alert('Nom et sujet requis');
+    try {
+      const res = await fetch(`${API}/api/tickets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      await res.json();
+      closeTicketModal();
+      switchTab('tickets');
+    } catch(e) {
+      alert('Erreur création ticket');
+    }
+  }
+
+  // Init
+  loadOrders();
+</script>
+</body>
+</html>
