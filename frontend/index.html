@@ -645,7 +645,7 @@
         <span class="pill">IG</span>
         <span class="pill">FB</span>
       </div>
-      <div id="msg-list-items">
+      <div id="msg-list-items" style="display:none">
         <div class="msg-item active">
           <div class="msg-head"><span class="msg-sender"><span class="src-dot src-ig"></span>Marie L.</span><span class="msg-time">10:42</span></div>
           <div class="msg-preview">Mon chien n'a pas reçu sa commande...</div>
@@ -981,9 +981,41 @@
     }
   }
 
+  // MAIL
+  let allMails = [];
+  async function loadMails() {
+    try {
+      const res = await fetch(`${API}/api/mail/inbox?limit=20`);
+      allMails = await res.json();
+      renderMailList(allMails);
+    } catch(e) { console.error(e); }
+  }
+  function renderMailList(mails) {
+    const container = document.getElementById('msg-list-items');
+    container.style.display = 'block';
+    if (!mails.length) { container.innerHTML = '<div style="padding:16px;font-size:11px;color:var(--text3);text-align:center">Aucun mail</div>'; return; }
+    container.innerHTML = mails.map((m,i) => {
+      const from = m.from.replace(/"([^"]+)".*/, '$1').trim() || m.from;
+      const date = m.date ? new Date(m.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '';
+      return `<div class="msg-item ${i===0?'active':''}" onclick="selectMail(${i})"><div class="msg-head"><span class="msg-sender"><span class="src-dot src-email"></span>${from.substring(0,22)}</span><span class="msg-time">${date}</span></div><div class="msg-preview">${(m.subject||'').substring(0,38)}</div></div>`;
+    }).join('');
+    selectMail(0);
+  }
+  function selectMail(i) {
+    const m = allMails[i];
+    document.querySelectorAll('.msg-item').forEach((el,idx) => el.classList.toggle('active',idx===i));
+    const from = m.from.replace(/"([^"]+)".*/, '$1').trim() || m.from;
+    const email = m.from.match(/<([^>]+)>/)?.[1] || m.from;
+    document.querySelector('.avatar').textContent = from.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    document.querySelector('.msg-detail-name').innerHTML = from + ' <span style="font-size:10px;color:var(--text3);font-weight:400;">· Email</span>';
+    document.querySelector('.msg-detail-sub').textContent = m.subject || '(sans objet)';
+    document.querySelector('.msg-thread').innerHTML = '<div><div class="bubble in">' + (m.preview||'').replace(/\n/g,'<br>').substring(0,600) + '</div><div class="bubble-time">' + (m.date ? new Date(m.date).toLocaleString('fr-FR') : '') + '</div></div>';
+    document.querySelector('.compose-input').placeholder = 'Répondre à ' + from + '...';
+    document.querySelector('.msg-detail-actions').innerHTML = '<button class="btn-sm">Résolu</button><button class="btn-sm accent" onclick="openTicketModal(\'' + from.replace(/'/g,'') + '\',\'' + email + '\',\'email\',\'\',\'' + (m.subject||'').replace(/'/g,'').substring(0,50) + '\')">+ Ticket</button>';
+  }
   // Init
-  loadMails();
   loadOrders();
+  loadMails();
 </script>
 </body>
 </html>
